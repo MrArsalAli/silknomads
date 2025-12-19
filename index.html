@@ -13,12 +13,15 @@
             font-family: 'Arial', sans-serif;
         }
 
-        iframe {
-            scrollbar-width: none !important;
+        html,
+        body {
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
 
-        iframe::-webkit-scrollbar {
-            display: none !important;
+        body::-webkit-scrollbar {
+            display: none;
         }
 
         body {
@@ -485,7 +488,7 @@
                 if (monthDates.length === 0) return;
 
                 html += `
-                    <div class="month-box open">
+                    <div class="month-box">
                         <div class="month-header">
                             ${monthName}
                             <div class="dropdown-icon"></div>
@@ -514,9 +517,12 @@
 
             datesSection.innerHTML = html || '<p style="text-align: center; color: #666;">No dates available.</p>';
 
-            // Attach accordion listeners
             document.querySelectorAll(".month-header").forEach(h => {
-                h.onclick = () => h.parentElement.classList.toggle("open");
+                h.onclick = (e) => {
+                    e.stopPropagation();
+                    const monthBox = h.parentElement;
+                    monthBox.classList.toggle("open");
+                };
             });
 
             // Show/hide "Show More" button
