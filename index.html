@@ -222,14 +222,6 @@
             color: #333;
         }
 
-        .package-title {
-            text-align: center;
-            color: #aa8935;
-            margin-bottom: 30px;
-            font-size: 1.8rem;
-            font-weight: bold;
-        }
-
         .message {
             text-align: center;
             color: #666;
@@ -355,9 +347,6 @@
 <body>
 
     <div class="tour-wrapper">
-        <!-- PAGE TITLE -->
-        <div class="package-title">10 Days Tour Package</div>
-
         <!-- TRAVEL OPTIONS -->
         <div class="step travel-step">
             <h3>Choose Travel Option</h3>
@@ -503,11 +492,11 @@
 
             message.innerHTML = `
                 <strong>Your Selection:</strong><br>
-                📅 <strong>Date:</strong> ${bookingData.date}<br>
-                💰 <strong>Price:</strong> CAD $${bookingData.price}<br>
-                🎯 <strong>Type:</strong> ${bookingData.tourType}<br>
-                🌤️ <strong>Season:</strong> ${bookingData.season}<br>
-                📦 <strong>Package:</strong> ${bookingData.package}<br><br>
+                <strong>Date:</strong> ${bookingData.date}<br>
+                <strong>Price:</strong> CAD $${bookingData.price}<br>
+                <strong>Type:</strong> ${bookingData.tourType}<br>
+                <strong>Season:</strong> ${bookingData.season}<br>
+                <strong>Package:</strong> ${bookingData.package}<br><br>
                 Click "Continue" to fill your details.
             `;
 
@@ -639,11 +628,11 @@
         document.getElementById('continueToForm').onclick = () => {
             // Redirect to Wix booking form page
             // Change this URL to your actual Wix form page
-            window.location.href = 'https://your-wix-site.com/booking-form';
+            window.location.href = 'https://www.silknomads.com/booking';
 
             // OR open in parent window (for iframe)
             if (window.parent !== window) {
-                window.parent.location.href = 'https://your-wix-site.com/booking-form';
+                window.parent.location.href = 'https://www.silknomads.com/booking';
             }
         };
 
