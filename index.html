@@ -13,6 +13,17 @@
             font-family: 'Arial', sans-serif;
         }
 
+        iframe {
+            overflow: hidden !important;
+            scrollbar-width: none !important;
+            /* Firefox */
+        }
+
+        iframe::-webkit-scrollbar {
+            display: none !important;
+            /* Chrome, Safari */
+        }
+
         body {
             padding: 20px;
             min-height: 100vh;
@@ -343,7 +354,6 @@
 </head>
 
 <body>
-
     <div class="tour-wrapper">
         <!-- TRAVEL OPTIONS -->
         <div class="step travel-step">
@@ -374,26 +384,11 @@
         <button class="show-more-btn" id="showMoreBtn" style="display: none;">Show More Dates</button>
     </div>
 
-    <!-- CONFIRMATION MODAL -->
-    <div class="confirmation-modal" id="confirmationModal">
-        <div class="modal-content">
-            <h3 style="color: #aa8935; margin-bottom: 15px;">Ready to Book!</h3>
-            <p id="modalMessage">Your selection has been saved.</p>
-            <div class="modal-buttons">
-                <button class="modal-btn continue-btn" id="continueToForm">Continue to Booking Form</button>
-                <button class="modal-btn cancel-btn" id="cancelBooking">Cancel</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         let selectedType = null;
         let selectedSeason = null;
-        let selectedDate = null;
-        let selectedPrice = null;
         let visibleMonths = 3;
 
-        // Season definitions for 10 DAYS PACKAGE
         const seasonData = {
             spring: {
                 months: ["March", "April", "May"],
@@ -433,15 +428,14 @@
             }
         };
 
-        // Prices
         const priceConfig = {
             private: { spring: 500, summer: 600, autumn: 450 },
             semiprivate: { spring: 400, summer: 480, autumn: 360 },
             group: { spring: 300, summer: 360, autumn: 270 }
         };
 
-        // Function to save data to localStorage AND send to parent (Wix)
-        function saveBookingData(type, season, dateObj, price) {
+        // Function to save data and redirect
+        function saveBookingAndRedirect(type, season, dateObj, price) {
             const bookingData = {
                 tourType: type,
                 season: season,
@@ -450,55 +444,25 @@
                     : `${dateObj.month} ${dateObj.start} – ${dateObj.end}, ${dateObj.year}`,
                 price: price,
                 package: "10 Days",
-                timestamp: new Date().toISOString(),
                 dateId: dateObj.id
             };
 
-            // 1. Save to localStorage (for same browser)
+            // Save to localStorage
             localStorage.setItem('tourBookingData', JSON.stringify(bookingData));
 
-            // 2. Send to parent window (Wix) - FOR IFRAME
-            if (window.parent !== window) {
-                try {
-                    window.parent.postMessage({
-                        type: 'TOUR_BOOKING_DATA',
-                        data: bookingData
-                    }, '*');
-                    console.log("Data sent to Wix parent");
-                } catch (e) {
-                    console.log("Could not send to parent:", e);
-                }
-            }
-
-            // 3. Also save to sessionStorage as backup
-            sessionStorage.setItem('tourBookingData', JSON.stringify(bookingData));
-
-            // 4. Set URL parameters (for sharing)
+            // Create URL with parameters
+            const baseURL = 'https://www.silknomads.com/booking';
             const params = new URLSearchParams();
-            params.set('tourType', type);
-            params.set('season', season);
-            params.set('dateId', dateObj.id);
-            window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
+            params.append('tourType', type);
+            params.append('season', season);
+            params.append('dateId', dateObj.id);
+            params.append('price', price);
+            params.append('date', encodeURIComponent(bookingData.date));
 
-            return bookingData;
-        }
+            const redirectURL = `${baseURL}?${params.toString()}`;
 
-        // Function to show confirmation modal
-        function showConfirmationModal(bookingData) {
-            const modal = document.getElementById('confirmationModal');
-            const message = document.getElementById('modalMessage');
-
-            message.innerHTML = `
-                <strong>Your Selection:</strong><br>
-                <strong>Date:</strong> ${bookingData.date}<br>
-                <strong>Price:</strong> CAD $${bookingData.price}<br>
-                <strong>Type:</strong> ${bookingData.tourType}<br>
-                <strong>Season:</strong> ${bookingData.season}<br>
-                <strong>Package:</strong> ${bookingData.package}<br><br>
-                Click "Continue" to fill your details.
-            `;
-
-            modal.style.display = 'flex';
+            // Redirect in new tab/window
+            window.open(redirectURL, '_blank');
         }
 
         // Function to render dates
@@ -567,26 +531,49 @@
             }
         }
 
-        // Handle Book button click
+        // Handle Book button click - DIRECT REDIRECT (no modal)
         function handleBookClick(dateId) {
             if (!selectedType || !selectedSeason) {
                 alert("Please select both travel option and season first.");
                 return;
             }
 
-            // Find the date object
             const dateObj = seasonData[selectedSeason].dates.find(d => d.id === dateId);
             if (!dateObj) return;
 
             const price = calculatePrice();
-            selectedDate = dateObj;
-            selectedPrice = price;
 
-            // Save booking data
-            const bookingData = saveBookingData(selectedType, selectedSeason, dateObj, price);
+            // Save to localStorage
+            const bookingData = {
+                tourType: selectedType,
+                season: selectedSeason,
+                date: dateObj.nextMonth
+                    ? `${dateObj.month} ${dateObj.start} – ${dateObj.nextMonth} ${dateObj.end}, ${dateObj.year}`
+                    : `${dateObj.month} ${dateObj.start} – ${dateObj.end}, ${dateObj.year}`,
+                price: price,
+                dateId: dateObj.id
+            };
+            localStorage.setItem('tourBookingData', JSON.stringify(bookingData));
 
-            // Show confirmation modal
-            showConfirmationModal(bookingData);
+            // ✅ CHANGE: Same iframe me khulne ke liye
+            const baseURL = 'https://www.silknomads.com/booking';
+            const params = new URLSearchParams();
+            params.append('tourType', selectedType);
+            params.append('season', selectedSeason);
+            params.append('dateId', dateObj.id);
+            params.append('price', price);
+            params.append('date', encodeURIComponent(bookingData.date));
+
+            const redirectURL = `${baseURL}?${params.toString()}`;
+
+            // ✅ Use `window.top.location.href` for iframe
+            if (window.top !== window.self) {
+                // Iframe ke through ho to parent page redirect
+                window.top.location.href = redirectURL;
+            } else {
+                // Direct page ho to
+                window.location.href = redirectURL;
+            }
         }
 
         function calculatePrice() {
@@ -622,25 +609,6 @@
             renderDates();
         };
 
-        // Modal buttons
-        document.getElementById('continueToForm').onclick = () => {
-            // Redirect to Wix booking form page
-            // Change this URL to your actual Wix form page
-            window.location.href = 'https://www.silknomads.com/booking';
-
-        };
-
-        document.getElementById('cancelBooking').onclick = () => {
-            document.getElementById('confirmationModal').style.display = 'none';
-        };
-
-        // Close modal on outside click
-        document.getElementById('confirmationModal').onclick = (e) => {
-            if (e.target.id === 'confirmationModal') {
-                document.getElementById('confirmationModal').style.display = 'none';
-            }
-        };
-
         // Initialize
         function initPage() {
             renderDates();
@@ -662,7 +630,7 @@
             }
         }
 
-        // Listen for messages from Wix (if needed)
+        // Listen for messages from parent (if in iframe)
         window.addEventListener('message', (event) => {
             if (event.data && event.data.type === 'GET_BOOKING_DATA') {
                 const data = localStorage.getItem('tourBookingData');
@@ -677,7 +645,6 @@
 
         initPage();
     </script>
-
 </body>
 
 </html>
