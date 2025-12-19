@@ -25,11 +25,13 @@
         }
 
         body {
+            background: #f9f9f9;
             padding: 20px;
             min-height: 100vh;
         }
 
         .tour-wrapper {
+            background: #f4f2fb;
             border-radius: 22px;
             padding: 30px;
             max-width: 1000px;
@@ -82,7 +84,6 @@
 
         .dates-section {
             margin-top: 20px;
-            transition: opacity 0.3s ease;
         }
 
         .month-box {
@@ -231,64 +232,6 @@
             color: #333;
         }
 
-        .message {
-            text-align: center;
-            color: #666;
-            padding: 20px;
-            font-style: italic;
-        }
-
-        .confirmation-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            max-width: 500px;
-            width: 90%;
-            text-align: center;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 25px;
-        }
-
-        .modal-btn {
-            padding: 12px 30px;
-            border-radius: 30px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 15px;
-        }
-
-        .continue-btn {
-            background: #aa8935;
-            color: white;
-            border: 1px solid #000;
-        }
-
-        .cancel-btn {
-            background: #f0f0f0;
-            color: #333;
-            border: 1px solid #ccc;
-        }
-
-        /* Responsive Styles */
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -355,7 +298,6 @@
 
 <body>
     <div class="tour-wrapper">
-        <!-- TRAVEL OPTIONS -->
         <div class="step travel-step">
             <h3>Choose Travel Option</h3>
             <div class="pill-group">
@@ -365,7 +307,6 @@
             </div>
         </div>
 
-        <!-- SEASONS -->
         <div class="step season-step">
             <h3>Select Season</h3>
             <div class="pill-group">
@@ -375,12 +316,8 @@
             </div>
         </div>
 
-        <!-- DATES -->
-        <div class="dates-section">
-            <!-- Dates will be populated dynamically -->
-        </div>
+        <div class="dates-section"></div>
 
-        <!-- SHOW MORE BUTTON -->
         <button class="show-more-btn" id="showMoreBtn" style="display: none;">Show More Dates</button>
     </div>
 
@@ -434,38 +371,6 @@
             group: { spring: 300, summer: 360, autumn: 270 }
         };
 
-        // Function to save data and redirect
-        function saveBookingAndRedirect(type, season, dateObj, price) {
-            const bookingData = {
-                tourType: type,
-                season: season,
-                date: dateObj.nextMonth
-                    ? `${dateObj.month} ${dateObj.start} – ${dateObj.nextMonth} ${dateObj.end}, ${dateObj.year}`
-                    : `${dateObj.month} ${dateObj.start} – ${dateObj.end}, ${dateObj.year}`,
-                price: price,
-                package: "10 Days",
-                dateId: dateObj.id
-            };
-
-            // Save to localStorage
-            localStorage.setItem('tourBookingData', JSON.stringify(bookingData));
-
-            // Create URL with parameters
-            const baseURL = 'https://www.silknomads.com/booking';
-            const params = new URLSearchParams();
-            params.append('tourType', type);
-            params.append('season', season);
-            params.append('dateId', dateObj.id);
-            params.append('price', price);
-            params.append('date', encodeURIComponent(bookingData.date));
-
-            const redirectURL = `${baseURL}?${params.toString()}`;
-
-            // Redirect in new tab/window
-            window.open(redirectURL, '_blank');
-        }
-
-        // Function to render dates
         function renderDates() {
             const datesSection = document.querySelector('.dates-section');
 
@@ -495,7 +400,7 @@
                         </div>
                         <div class="month-content">
                             ${monthDates.map(date => {
-                    const price = calculatePrice();
+                    const price = selectedType && selectedSeason ? priceConfig[selectedType][selectedSeason] : '--';
                     const dateRange = date.nextMonth
                         ? `${monthName} ${date.start} – ${date.nextMonth} ${date.end}, ${date.year}`
                         : `${monthName} ${date.start} – ${date.end}, ${date.year}`;
@@ -525,7 +430,6 @@
                 };
             });
 
-            // Show/hide "Show More" button
             const showMoreBtn = document.getElementById('showMoreBtn');
             if (visibleMonths >= months.length) {
                 showMoreBtn.style.display = 'none';
@@ -534,7 +438,6 @@
             }
         }
 
-        // Handle Book button click - DIRECT REDIRECT (no modal)
         function handleBookClick(dateId) {
             if (!selectedType || !selectedSeason) {
                 alert("Please select both travel option and season first.");
@@ -544,9 +447,8 @@
             const dateObj = seasonData[selectedSeason].dates.find(d => d.id === dateId);
             if (!dateObj) return;
 
-            const price = calculatePrice();
+            const price = priceConfig[selectedType][selectedSeason];
 
-            // Save to localStorage
             const bookingData = {
                 tourType: selectedType,
                 season: selectedSeason,
@@ -558,7 +460,6 @@
             };
             localStorage.setItem('tourBookingData', JSON.stringify(bookingData));
 
-            // ✅ CHANGE: Same iframe me khulne ke liye
             const baseURL = 'https://www.silknomads.com/booking';
             const params = new URLSearchParams();
             params.append('tourType', selectedType);
@@ -569,22 +470,13 @@
 
             const redirectURL = `${baseURL}?${params.toString()}`;
 
-            // ✅ Use `window.top.location.href` for iframe
             if (window.top !== window.self) {
-                // Iframe ke through ho to parent page redirect
                 window.top.location.href = redirectURL;
             } else {
-                // Direct page ho to
                 window.location.href = redirectURL;
             }
         }
 
-        function calculatePrice() {
-            if (!selectedType || !selectedSeason) return '--';
-            return priceConfig[selectedType][selectedSeason];
-        }
-
-        // Travel Option selection
         document.querySelectorAll(".travel-step .pill").forEach(btn => {
             btn.onclick = () => {
                 document.querySelectorAll(".travel-step .pill").forEach(b => b.classList.remove("active"));
@@ -594,7 +486,6 @@
             };
         });
 
-        // Season selection
         document.querySelectorAll(".season-step .pill").forEach(btn => {
             btn.onclick = () => {
                 document.querySelectorAll(".season-step .pill").forEach(b => b.classList.remove("active"));
@@ -605,24 +496,20 @@
             };
         });
 
-        // Show More button
         document.getElementById('showMoreBtn').onclick = () => {
             const months = seasonData[selectedSeason].months;
             visibleMonths = Math.min(visibleMonths + 3, months.length);
             renderDates();
         };
 
-        // Initialize
         function initPage() {
             renderDates();
 
-            // Check for URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             const tourType = urlParams.get('tourType');
             const season = urlParams.get('season');
 
             if (tourType && season) {
-                // Auto-select from URL
                 const typeBtn = document.querySelector(`.travel-step .pill[data-type="${tourType}"]`);
                 const seasonBtn = document.querySelector(`.season-step .pill[data-season="${season}"]`);
 
@@ -633,7 +520,6 @@
             }
         }
 
-        // Listen for messages from parent (if in iframe)
         window.addEventListener('message', (event) => {
             if (event.data && event.data.type === 'GET_BOOKING_DATA') {
                 const data = localStorage.getItem('tourBookingData');
