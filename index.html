@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -343,6 +344,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="tour-wrapper">
         <div class="step travel-step">
@@ -521,8 +523,7 @@
             const salePrice = salePrices[selectedType][selectedSeason];
 
             // 1. PAGE NAME
-            const pagePath = window.location.pathname;
-            const pageName = pagePath.split('/').pop();
+            const pageName = "premium-uzbekistan"
 
             // 2. START DATE (Direct from dateObj.start)
             const startDay = parseInt(dateObj.start);
@@ -553,7 +554,11 @@
             console.log('Redirect URL:', redirectURL);
 
             // 7. REDIRECT
-            window.location.href = redirectURL;
+            if (window.top !== window.self) {
+                window.top.location.href = redirectURL;
+            } else {
+                window.location.href = redirectURL;
+            }
         }
 
         // Helper functions - Yeh wahi rahenge
@@ -633,4 +638,5 @@
         initPage();
     </script>
 </body>
+
 </html>
